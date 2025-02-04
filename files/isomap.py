@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 from geo import KNearestNeighbors
 from pca import PCA
+from scipy.sparse.csgraph import dijkstra
 
 class Isomap:
     """
@@ -22,17 +23,10 @@ class Isomap:
 
     def _compute_geodesic_distances(self, X):
         """
-        Compute the geodesic distance matrix using the shortest path algorithm.
+        Compute the geodesic distance matrix using Dijkstra's algorithm.
         """
         adjacency_matrix = self._adj_calculator(X)
-        graph = nx.Graph(adjacency_matrix)
-        geodesic_distances = np.zeros((X.shape[0], X.shape[0]))
-        
-        for i in range(X.shape[0]):
-            shortest_paths = nx.single_source_dijkstra_path_length(graph, i)
-            for j in shortest_paths:
-                geodesic_distances[i, j] = shortest_paths[j]
-        
+        geodesic_distances = dijkstra(adjacency_matrix, directed=False)
         return geodesic_distances
 
     def _decompose(self, geodesic_distances):
@@ -46,7 +40,7 @@ class Isomap:
         
         D_squared = np.square(geodesic_distances)
         B = -0.5 * C @ D_squared @ C
-        
+
         return self._decomposer.fit_transform(B)
 
     def fit_transform(self, X):
@@ -59,7 +53,6 @@ class Isomap:
         geodesic_distances = self._compute_geodesic_distances(X)
         X_transformed = self._decompose(geodesic_distances)
         return X_transformed
-
 
 if __name__ == "__main__":
     from dataset import load_dataset
@@ -79,3 +72,4 @@ if __name__ == "__main__":
     plt.title('Isomap Projection of Swiss Roll')
     plt.colorbar()
     plt.show()
+

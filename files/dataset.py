@@ -40,7 +40,8 @@ if __name__ == "__main__":
     # Apply PCA for dimensionality reduction
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X)
-    
+    rec_pca = pca.inverse_transform(X_pca)
+        
     # Visualize the projected data
     plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap='viridis')
     plt.xlabel('Principal Component 1')
@@ -48,4 +49,11 @@ if __name__ == "__main__":
     plt.title('PCA Projection of the Hyperplane')
     plt.colorbar()
     plt.show()
+    
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(rec_pca[:, 0], rec_pca[:, 1], rec_pca[:, 2], c=y, cmap='viridis')
+    ax.set_title('Reconstruced Hyperplane in 3D Space')
+    plt.show()
+
 

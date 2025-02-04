@@ -1,23 +1,22 @@
+
 import numpy as np
+
 
 def _compute_distance_matrix(X):
     """
-    Compute pairwise Euclidean distance matrix for X.
+    Compute the pairwise Euclidean distance matrix for X in a vectorized manner.
     
     Parameters:
-    - X: numpy array of shape (m, n), where m is the number of samples.
+    - X: numpy array of shape (m, n)
     
     Returns:
-    - distance_matrix: numpy array of shape (m, m) with pairwise distances.
+    - D: numpy array of shape (m, m) where D[i, j] is the Euclidean distance between X[i] and X[j]
     """
-    m = X.shape[0]
-    distance_matrix = np.zeros((m, m))
-    
-    for i in range(m):
-        for j in range(m):
-            distance_matrix[i, j] = np.linalg.norm(X[i] - X[j])
-    
-    return distance_matrix
+    sum_X = np.sum(X ** 2, axis=1)
+    D_squared = sum_X[:, np.newaxis] + sum_X[np.newaxis, :] - 2 * (X @ X.T)
+    D_squared[D_squared < 0] = 0.0
+    D = np.sqrt(D_squared)
+    return D
 
 
 class KNearestNeighbors:
@@ -33,23 +32,28 @@ class KNearestNeighbors:
     
     def __call__(self, X):
         """
+        For each point in X, find the indices of the k nearest neighbors and build an adjacency matrix.
+        
         Parameters:
-        - X: numpy array, the dataset (m x n).
+        - X: numpy array of shape (m, n)
         
         Returns:
-        - neighbors: numpy array, adjacency matrix (m x m).
+        - neighbors: numpy array (m x m) where neighbors[i, j] = 1 if j is among the k nearest neighbors of i, else 0.
         """
-        distance_matrix = _compute_distance_matrix(X)
+        D = _compute_distance_matrix(X)
         m = X.shape[0]
-        adjacency_matrix = np.zeros((m, m))
-        
-        for i in range(m):
-            # Get indices of k nearest neighbors (excluding the point itself)
-            knn_indices = np.argsort(distance_matrix[i])[1:self.k + 1]
-            adjacency_matrix[i, knn_indices] = distance_matrix[i, knn_indices]
-            adjacency_matrix[knn_indices, i] = distance_matrix[i, knn_indices]  # Symmetric adjacency
-        
-        return adjacency_matrix
+        # Exclude self by setting the diagonal to infinity
+        np.fill_diagonal(D, np.inf)
+        # Get sorted indices along each row; shape (m, m)
+        sorted_indices = np.argsort(D, axis=1)
+        # Select the first k indices for each row (nearest neighbors)
+        knn_indices = sorted_indices[:, :self.k]
+        # Initialize adjacency matrix with zeros
+        neighbors = np.zeros((m, m), dtype=int)
+        # Use advanced indexing to set neighbors to 1
+        row_indices = np.arange(m)[:, None]  # shape (m, 1)
+        neighbors[row_indices, knn_indices] = 1
+        return neighbors
     
 
 class EpsNeighborhood:
@@ -65,15 +69,39 @@ class EpsNeighborhood:
     
     def __call__(self, X):
         """
+        For each point in X, mark as neighbors those points within the epsilon distance.
+        
         Parameters:
-        - X: numpy array, the dataset (m x n).
+        - X: numpy array of shape (m, n)
         
         Returns:
-        - neighbors: numpy array, adjacency matrix (m x m).
+        - neighbors: numpy array (m x m) where neighbors[i, j] = 1 if the distance between i and j is <= epsilon, else 0.
         """
-        distance_matrix = _compute_distance_matrix(X)
-        adjacency_matrix = (distance_matrix <= self.eps).astype(float)
-        adjacency_matrix[adjacency_matrix == 0] = np.inf  # Non-neighbors set to infinity
-        np.fill_diagonal(adjacency_matrix, 0)  # Ensure zero self-distances
-        
-        return adjacency_matrix
+        D = _compute_distance_matrix(X)
+        # Create a binary matrix: 1 where distance is within epsilon, else 0
+        neighbors = (D <= self.eps).astype(int)
+        # Exclude self-neighbors (set the diagonal to 0)
+        np.fill_diagonal(neighbors, 0)
+        return neighbors
+
+
+# --- Optional Testing ---
+if __name__ == "__main__":
+    # Create synthetic data (10 samples, 3 dimensions)
+    np.random.seed(42)
+    X = np.random.rand(10, 3)
+    X = np.array([[0,0],[1,1],[2,2],[3,3]])
+    
+    # Test _compute_distance_matrix
+    D = _compute_distance_matrix(X)
+    print("Distance matrix:\n", D)
+    
+    # Test KNearestNeighbors with k = 3
+    knn = KNearestNeighbors(k=2)
+    knn_neighbors = knn(X)
+    print("\nKNearestNeighbors adjacency matrix (k=3):\n", knn_neighbors)
+    
+    # Test EpsNeighborhood with epsilon = 0.5
+    eps_neigh = EpsNeighborhood(eps=1.5)
+    eps_neighbors = eps_neigh(X)
+    print("\nEpsNeighborhood adjacency matrix (epsilon=0.5):\n", eps_neighbors)
