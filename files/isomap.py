@@ -1,4 +1,5 @@
 import numpy as np
+import networkx as nx
 from geo import KNearestNeighbors
 from pca import PCA
 
@@ -15,17 +16,38 @@ class Isomap:
         - n_components: int, the number of dimensions to retain in the reduced space.
         - adj_calculator: function, given a dataset, returns the adjacency matrix.
         """
-        # TODO: initialize required instance variables.
+        self.n_components = n_components
         self._adj_calculator = adj_calculator
         self._decomposer = decomposer or PCA(n_components=n_components)
 
     def _compute_geodesic_distances(self, X):
-        # TODO: Use a shortest-path algorithm to compute the geodesic distances
-        return None
+        """
+        Compute the geodesic distance matrix using the shortest path algorithm.
+        """
+        adjacency_matrix = self._adj_calculator(X)
+        graph = nx.Graph(adjacency_matrix)
+        geodesic_distances = np.zeros((X.shape[0], X.shape[0]))
+        
+        for i in range(X.shape[0]):
+            shortest_paths = nx.single_source_dijkstra_path_length(graph, i)
+            for j in shortest_paths:
+                geodesic_distances[i, j] = shortest_paths[j]
+        
+        return geodesic_distances
 
     def _decompose(self, geodesic_distances):
-        # TODO: Apply MDS (eigen-decomposition) to the geodesic distance matrix
-        return None
+        """
+        Apply MDS (eigen-decomposition) to the geodesic distance matrix.
+        """
+        n = geodesic_distances.shape[0]
+        I = np.eye(n)
+        J = np.ones((n, n)) / n
+        C = I - J
+        
+        D_squared = np.square(geodesic_distances)
+        B = -0.5 * C @ D_squared @ C
+        
+        return self._decomposer.fit_transform(B)
 
     def fit_transform(self, X):
         """
@@ -34,18 +56,26 @@ class Isomap:
         Parameters:
         - X: numpy array, the dataset (m x n).
         """
-        # TODO: Compute the distance matrix
-
-        # TODO: Construct the adjacency graph
-
-        # TODO: Perform dimensionality reduction on geodesic distances
-        
-        # TODO: Return transformed data
-        return None
+        geodesic_distances = self._compute_geodesic_distances(X)
+        X_transformed = self._decompose(geodesic_distances)
+        return X_transformed
 
 
 if __name__ == "__main__":
-    # TODO: Load swiss roll dataset
-    # TODO: Perform Isomap
-    # TODO: Visualize the results
-    pass
+    from dataset import load_dataset
+    import matplotlib.pyplot as plt
+    
+    # Load Swiss Roll dataset
+    X, y = load_dataset('./files/datasets/swissroll.npz')
+    
+    # Apply Isomap
+    isomap = Isomap(n_components=2)
+    X_isomap = isomap.fit_transform(X)
+    
+    # Visualize the reduced data
+    plt.scatter(X_isomap[:, 0], X_isomap[:, 1], c=y, cmap='viridis')
+    plt.xlabel('Component 1')
+    plt.ylabel('Component 2')
+    plt.title('Isomap Projection of Swiss Roll')
+    plt.colorbar()
+    plt.show()

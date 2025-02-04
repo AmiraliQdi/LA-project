@@ -1,5 +1,7 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from dataset import load_dataset
 
 class PCA:
     """
@@ -13,79 +15,102 @@ class PCA:
         Parameters:
         - n_components: int, the number of principal components to keep.
         """
-        # TODO: initialize required instance variables.
+        self.n_components = n_components
+        self.mean = None
+        self.components = None
 
     def _center_data(self, X):
-        # TODO: Compute the mean of X along axis 0 (features) and subtract it from X
-        return None
+        """Compute the mean of X along axis 0 (features) and subtract it from X."""
+        self.mean = np.mean(X, axis=0)
+        return X - self.mean
 
     def _create_cov(self, X):
-        # TODO: Use the formula for the covariance matrix.
-        return None
+        """Compute the covariance matrix of X."""
+        return np.cov(X, rowvar=False)
 
     def _decompose(self, covariance_matrix):
-        # TODO: Use np.linalg.eigh to get eigenvalues and eigenvectors
-        return None
+        """Perform eigendecomposition on the covariance matrix."""
+        eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
+        sorted_indices = np.argsort(eigenvalues)[::-1]  # Sort in descending order
+        return eigenvalues[sorted_indices], eigenvectors[:, sorted_indices]
 
     def fit(self, X):
-        """
-        Fit the PCA model to the dataset by computing the principal components.
-
-        Parameters:
-        - X: numpy array, the centered dataset (m x n).
-        """
-        # TODO: Center the data
-
-        # TODO: Compute the covariance matrix
-
-        # TODO: Perform eigendecomposition
-        pass
+        """Fit the PCA model to the dataset by computing the principal components."""
+        X_centered = self._center_data(X)
+        covariance_matrix = self._create_cov(X_centered)
+        eigenvalues, eigenvectors = self._decompose(covariance_matrix)
+        self.components = eigenvectors[:, :self.n_components]
     
     def transform(self, X):
-        """
-        Project the data onto the top principal components.
-
-        Parameters:
-        - X: numpy array, the data to project (m x n).
-
-        Returns:
-        - transformed_data: numpy array, the data projected onto the top principal components.
-        """
-        # TODO: Center the data
-
-        # TODO: Apply projection
-        return None
+        """Project the data onto the top principal components."""
+        X_centered = X - self.mean
+        return np.dot(X_centered, self.components)
 
     def fit_transform(self, X):
-        """
-        Fit the PCA model and transform the data in one step.
-
-        Parameters:
-        - X: numpy array, the data to fit and transform (m x n).
-
-        Returns:
-        - transformed_data: numpy array, the data projected onto the top principal components.
-        """
+        """Fit the PCA model and transform the data in one step."""
         self.fit(X)
         return self.transform(X)
 
     def inverse_transform(self, X_transformed):
-        """
-        Reconstruct the original data from the transformed data.
-
-        Parameters:
-        - X_transformed: numpy array, the data in the reduced dimensional space.
-
-        Returns:
-        - original_data: numpy array, the reconstructed data in the original space.
-        """
-        # TODO: Apply reconstruction formula
-        return None
+        """Reconstruct the original data from the transformed data."""
+        return np.dot(X_transformed, self.components.T) + self.mean
 
 
 if __name__ == "__main__":
-    # TODO: Load swiss roll dataset
-    # TODO: Perform PCA
-    # TODO: Visualize the results
-    # TODO: Reconstruct dataset
-    pass
+    import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
+def generate_plane(d=2, dim=3, classes=2, num_points=1000, noise=0.1):
+    """Generate a noisy d-dimensional plane within a dim-dimensional space partitioned into classes."""
+    # Generate random d-dimensional points
+    X = np.random.uniform(-1, 1, (num_points, d))
+    
+    # Extend to higher dimensions by adding zero-padding
+    X_high_dim = np.hstack([X, np.zeros((num_points, dim - d))])
+    
+    # Add Gaussian noise
+    X_high_dim += np.random.normal(0, noise, X_high_dim.shape)
+    
+    # Labeling strategy: Partition the hyperplane into classes
+    labels = np.zeros(num_points, dtype=int)
+    if classes > 1:
+        # Example: Partition into a grid in the first two dimensions
+        labels = ((X[:, 0] > 0).astype(int) + 2 * (X[:, 1] > 0).astype(int)) % classes
+    
+    return X_high_dim, labels
+
+if __name__ == "__main__":
+    
+    # Load the Swiss roll dataset
+    X, y = load_dataset('./files/datasets/swissroll.npz')
+    
+    # Apply PCA to reduce dimensionality to 2D
+    pca = PCA(n_components=2)
+    X_pca = pca.fit_transform(X)
+    
+    # Visualize the reduced data
+    plt.scatter(X_pca[:, 0], X_pca[:, 1], c=y, cmap='viridis')
+    plt.xlabel('Principal Component 1')
+    plt.ylabel('Principal Component 2')
+    plt.title('PCA Projection of Swiss Roll')
+    plt.colorbar()
+    plt.show()
+    
+    # Reconstruct the original dataset
+    X_reconstructed = pca.inverse_transform(X_pca)
+    
+    # Visualize the original and reconstructed Swiss Roll side by side
+    fig = plt.figure(figsize=(12, 6))
+    
+    # Original Swiss Roll
+    ax1 = fig.add_subplot(121, projection='3d')
+    ax1.scatter(X[:, 0], X[:, 1], X[:, 2], c=y, cmap='viridis')
+    ax1.set_title('Original Swiss Roll')
+    
+    # Reconstructed Swiss Roll
+    ax2 = fig.add_subplot(122, projection='3d')
+    ax2.scatter(X_reconstructed[:, 0], X_reconstructed[:, 1], X_reconstructed[:, 2], c=y, cmap='viridis')
+    ax2.set_title('Reconstructed Swiss Roll')
+    
+    plt.show()
