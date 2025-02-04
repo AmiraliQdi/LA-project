@@ -41,3 +41,11 @@ class Isomap:
         # TODO: Perform dimensionality reduction on geodesic distances
         
         # TODO: Return transformed data
+        return None
+
+
+if __name__ == "__main__":
+    # TODO: Load swiss roll dataset
+    # TODO: Perform Isomap
+    # TODO: Visualize the results
+    pass
