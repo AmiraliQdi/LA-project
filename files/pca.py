@@ -31,7 +31,7 @@ class PCA:
     def _decompose(self, covariance_matrix):
         """Perform eigendecomposition on the covariance matrix."""
         eigenvalues, eigenvectors = np.linalg.eigh(covariance_matrix)
-        sorted_indices = np.argsort(eigenvalues)[::-1]  # Sort in descending order
+        sorted_indices = np.argsort(eigenvalues)[::-1]
         return eigenvalues[sorted_indices], eigenvectors[:, sorted_indices]
 
     def fit(self, X):
@@ -40,6 +40,8 @@ class PCA:
         covariance_matrix = self._create_cov(X_centered)
         eigenvalues, eigenvectors = self._decompose(covariance_matrix)
         self.components = eigenvectors[:, :self.n_components]
+        total_variance = np.sum(eigenvalues)
+        self.explained_variance_ratio_ = eigenvalues[:self.n_components] / total_variance
     
     def transform(self, X):
         """Project the data onto the top principal components."""
@@ -57,32 +59,7 @@ class PCA:
 
 
 if __name__ == "__main__":
-    import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-
-def generate_plane(d=2, dim=3, classes=2, num_points=1000, noise=0.1):
-    """Generate a noisy d-dimensional plane within a dim-dimensional space partitioned into classes."""
-    # Generate random d-dimensional points
-    X = np.random.uniform(-1, 1, (num_points, d))
     
-    # Extend to higher dimensions by adding zero-padding
-    X_high_dim = np.hstack([X, np.zeros((num_points, dim - d))])
-    
-    # Add Gaussian noise
-    X_high_dim += np.random.normal(0, noise, X_high_dim.shape)
-    
-    # Labeling strategy: Partition the hyperplane into classes
-    labels = np.zeros(num_points, dtype=int)
-    if classes > 1:
-        # Example: Partition into a grid in the first two dimensions
-        labels = ((X[:, 0] > 0).astype(int) + 2 * (X[:, 1] > 0).astype(int)) % classes
-    
-    return X_high_dim, labels
-
-if __name__ == "__main__":
-    
-    # Load the Swiss roll dataset
     X, y = load_dataset('./files/datasets/swissroll.npz')
     
     # Apply PCA to reduce dimensionality to 2D

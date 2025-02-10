@@ -1,6 +1,6 @@
 import numpy as np
 
-def trustworthiness(D, D_embedded, *, n_neighbors=5):
+def trustworthiness(D, D_embedded, *, n_neighbors=10):
     """
     Computes the trustworthiness score to evaluate how well the local structure 
     is preserved after dimensionality reduction.

@@ -2,7 +2,10 @@ import numpy as np
 import networkx as nx
 from geo import KNearestNeighbors
 from pca import PCA
+# from util import dijkstra
 from scipy.sparse.csgraph import dijkstra
+from dataset import load_dataset
+import matplotlib.pyplot as plt
 
 class Isomap:
     """
@@ -55,10 +58,7 @@ class Isomap:
         return X_transformed
 
 if __name__ == "__main__":
-    from dataset import load_dataset
-    import matplotlib.pyplot as plt
-    
-    # Load Swiss Roll dataset
+
     X, y = load_dataset('./files/datasets/swissroll.npz')
     
     # Apply Isomap

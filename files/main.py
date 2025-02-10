@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
 from pca import PCA
 from isomap import Isomap
 from lle import LLE
@@ -9,24 +8,23 @@ from dataset import load_dataset
 from metrics import trustworthiness
 
 if __name__ == "__main__":
-    # Load Swiss Roll dataset
     X, color = load_dataset('./files/datasets/swissroll.npz')
 
-    # Apply PCA
+    # PCA
     pca = PCA(n_components=2)
     X_pca = pca.fit_transform(X)
     trust_pca = trustworthiness(np.linalg.norm(X[:, None] - X[None, :], axis=2), 
                                 np.linalg.norm(X_pca[:, None] - X_pca[None, :], axis=2), 
                                 n_neighbors=10)
 
-    # Apply Isomap
+    # Isomap
     isomap = Isomap(n_components=2)
     X_isomap = isomap.fit_transform(X)
     trust_isomap = trustworthiness(np.linalg.norm(X[:, None] - X[None, :], axis=2), 
                                    np.linalg.norm(X_isomap[:, None] - X_isomap[None, :], axis=2), 
                                    n_neighbors=10)
 
-    # Apply LLE
+    # LLE
     lle = LLE(n_components=2, adj_calculator=KNearestNeighbors(10))
     X_lle = lle.fit_transform(X)
     trust_lle = trustworthiness(np.linalg.norm(X[:, None] - X[None, :], axis=2), 
@@ -34,7 +32,8 @@ if __name__ == "__main__":
                                 n_neighbors=10)
 
     print(f"PCA:{trust_pca} | ISO:{trust_isomap} | LLE:{trust_lle}")
-    # Visualize all embeddings side by side
+
+
     fig, axes = plt.subplots(1, 3, figsize=(18, 6))
 
     algorithms = [("PCA", X_pca, trust_pca), 

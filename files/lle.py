@@ -1,11 +1,6 @@
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
-from scipy.sparse import csr_matrix, eye
-from scipy.sparse.linalg import eigsh
 import matplotlib.pyplot as plt
-from sklearn.datasets import make_swiss_roll
 from dataset import load_dataset
-
 import numpy as np
 from geo import KNearestNeighbors
 
@@ -52,7 +47,7 @@ class LLE:
 
             # Solve for weights
             w = np.linalg.solve(C, np.ones(k))
-            w /= np.sum(w)  # Normalize to sum to 1
+            w /= np.sum(w) 
 
             # Store weights in the correct positions of W
             W[i, indices[i]] = w  
@@ -72,15 +67,15 @@ class LLE:
         n_samples = W.shape[0]
         
         # Step 1: Compute the matrix M = (I - W)^T * (I - W)
-        I = np.eye(n_samples)  # Identity matrix of size (n_samples, n_samples)
-        M = (I - W).T @ (I - W)  # Compute (I - W)^T * (I - W)
+        I = np.eye(n_samples)  
+        M = (I - W).T @ (I - W) 
 
         # Step 2: Compute eigenvalues and eigenvectors
         eigenvalues, eigenvectors = np.linalg.eigh(M)  # Use eigh (symmetric matrix)
 
         # Step 3: Sort eigenvalues in ascending order and ignore the first (zero) eigenvalue
         sorted_indices = np.argsort(eigenvalues)
-        eigenvectors_sorted = eigenvectors[:, sorted_indices[1:]]  # Ignore the first eigenvector
+        eigenvectors_sorted = eigenvectors[:, sorted_indices[1:]] 
 
         return eigenvectors_sorted
 
@@ -107,8 +102,6 @@ class LLE:
 
 
 if __name__ == "__main__":
-# Step 1: Load Swiss Roll dataset
-    # X, color = make_swiss_roll(n_samples=1500, noise=0.1)
     X, color = load_dataset('./files/datasets/swissroll.npz')
 
     # Step 2: Perform LLE

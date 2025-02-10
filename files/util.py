@@ -1,7 +1,8 @@
 import numpy as np
 import heapq
+import matplotlib.pyplot as plt
 
-def Dijkstra(adjacency_matrix, directed=False):
+def dijkstra(adjacency_matrix, directed=False):
     """
     Compute shortest paths using Dijkstra's algorithm in a memory-efficient way.
 
@@ -43,3 +44,43 @@ def Dijkstra(adjacency_matrix, directed=False):
         geodesic_distances[start_node] = distances
 
     return geodesic_distances
+
+
+def plot_images(original, reconstructed, n_components,n_samples=5,explained_variance=None):
+    """Plot original and reconstructed images side by side."""
+    fig, axes = plt.subplots(2, n_samples, figsize=(10, 5))
+    
+    for i in range(n_samples):
+        axes[0, i].imshow(original[i].reshape(32, 32), cmap='gray')
+        axes[0, i].axis('off')
+        
+        axes[1, i].imshow(reconstructed[i].reshape(32, 32), cmap='gray')
+        axes[1, i].axis('off')
+    
+    axes[0, 0].set_title("Original Images")
+    axes[1, 0].set_title("Reconstructed Images")
+    
+    if explained_variance is not None:
+        plt.figtext(0.5, 0.01, f"Explained Variance: {explained_variance:.4f} | number of components={n_components}", ha="center", fontsize=10)
+    
+    plt.show()
+
+def plot_explained_variance(pca):
+    """Plot cumulative explained variance ratio."""
+    plt.figure(figsize=(8, 5))
+    plt.plot(np.cumsum(pca.explained_variance_ratio_,), marker='o', linestyle='--')
+    plt.xlabel("Number of Components")
+    plt.ylabel("Cumulative Explained Variance Ratio")
+    plt.title("Explained Variance vs. Number of Components")
+    plt.grid()
+    plt.show()
+
+def plot_thrustworthiness_ncomponents(thrust_array,algorithm):
+    """Plot cumulative explained variance ratio."""
+    plt.figure(figsize=(8, 5))
+    plt.plot(thrust_array, marker='o', linestyle='--')
+    plt.xlabel("Number of Components")
+    plt.ylabel("Thrusworthiness score")
+    plt.title(f"{algorithm}:Thrusworthiness score based on diffrent number of componentens")
+    plt.grid()
+    plt.show()
